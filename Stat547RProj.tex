@@ -1,0 +1,503 @@
+\documentclass{article}\usepackage[]{graphicx}\usepackage[]{color}
+% maxwidth is the original width if it is less than linewidth
+% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+\makeatletter
+\@ifundefined{AddToHook}{}{\AddToHook{package/xcolor/after}{\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}}}
+\makeatother
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.686,0.059,0.569}{#1}}%
+\newcommand{\hlstr}[1]{\textcolor[rgb]{0.192,0.494,0.8}{#1}}%
+\newcommand{\hlcom}[1]{\textcolor[rgb]{0.678,0.584,0.686}{\textit{#1}}}%
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0,0,0}{#1}}%
+\newcommand{\hlstd}[1]{\textcolor[rgb]{0.345,0.345,0.345}{#1}}%
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.161,0.373,0.58}{\textbf{#1}}}%
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.69,0.353,0.396}{#1}}%
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.333,0.667,0.333}{#1}}%
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.737,0.353,0.396}{\textbf{#1}}}%
+\let\hlipl\hlkwb
+
+\usepackage{framed}
+\makeatletter
+\newenvironment{kframe}{%
+ \def\at@end@of@kframe{}%
+ \ifinner\ifhmode%
+  \def\at@end@of@kframe{\end{minipage}}%
+  \begin{minipage}{\columnwidth}%
+ \fi\fi%
+ \def\FrameCommand##1{\hskip\@totalleftmargin \hskip-\fboxsep
+ \colorbox{shadecolor}{##1}\hskip-\fboxsep
+     % There is no \\@totalrightmargin, so:
+     \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+ \MakeFramed {\advance\hsize-\width
+   \@totalleftmargin\z@ \linewidth\hsize
+   \@setminipage}}%
+ {\par\unskip\endMakeFramed%
+ \at@end@of@kframe}
+\makeatother
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\makeatletter
+\@ifundefined{AddToHook}{}{\AddToHook{package/xcolor/after}{
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+}}
+\makeatother
+\newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
+
+\usepackage{alltt}
+\usepackage[a4paper, total={7in, 9in}]{geometry}
+\usepackage{float}
+ \usepackage{booktabs}
+\usepackage{longtable}
+ \usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig} 
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{amssymb}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsthm}
+ \usepackage{tabu}
+ \usepackage{hyperref}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\usepackage[backend=bibtex]{biblatex}
+\addbibresource{references.bib}
+
+\begin{document}
+
+\title{\textbf{Evaluating the Performance of Bayesian Treed Gaussian Process Models for Predicting the Velocity of Ice in the Arctic Sea-Ice Computer Model}}
+
+\author{\textit{Nirupama Tamvada}}
+
+\maketitle
+
+\abstract{Stationary Gaussian Processes (GP's) have become a popular standard in a computer model framework due to  their many desirable properties. However, for many real-life applications, the stationarity assumption can often be restrictive, particularly when it comes to modelling discontinuities, as well as accounting for differing regional variability in the parameter space. Thus, Gramacy and Lee (2008) proposed relaxing the stationarity assumption in a computationally scalable manner, by partitioning the input space through a tree-based approach, and subsequently fitting stationary Bayesian Gaussian Processes within each partition region. In this report, we apply four such Bayesian tree-based approaches: the classification and regression tree, random forests, treed Gaussian Processes and treed Gaussian Processes with a limiting linear model comparison to a stationary Gaussian Process. We do so to the end of predicting the ice velocity in the Arctic Sea-Ice Computer Model, which is speculated to be difficult to predict due to the numerical model displaying differential variability in some regions of the parameter space. Overall, we found that while the RMSEs of the linear treed approaches (random forests and treed limiting linear model GP's) were marginally lower than that of the stationary GP, the treed GP approaches did not result in a dramatic increase in prediction accuracy. The treed limiting linear model GP had the lowest RMSE compared to both the stationary GP and the treed GP. The Random forests algorithm also had a relatively low RMSE for predicting ice-velocity. Thus, while ice-velocity remains difficult to predict, the treed limiting linear model GP may be a better and less-computationally intensive model choice to use for sensitivity analysis compared to a stationary GP.}
+
+\section*{Introduction}
+
+In a computer model framework, using a Gaussian Process (GP) is a popular choice. This is because GPs are conceptually straightforward and satisfy several desirable properties: predictive uncertainty can be quantified, prior knowledge can be easily accounted for in the form of covariance functions and Bayesian approaches, a GP conditionally to given data (equality constraints) is also a GP, and the partial derivatives of a GP are also GPs \cite{maatouk_bay_2017, gramacy_lee_2008}. A standard approach in the literature for emulation is the use of a stationary smooth Gaussian Process \cite{gramacy_lee_2008}. However, there are some particular disadvantages of using this standard form of a GP. In particular, the stationarity assumption, which leads to the usage of the same covariance structure being used throughout the space, often does not scale well to a wide range of applications. This assumption can be too restrictive when it comes to modelling discontinuities, and sharp changes of the function surface \cite{gramacy_lee_2008}. Importantly, the estimated predictive error of a stationary GP only depends on a global measure of error that uses all of the discrepancies between observations and predictions \cite{gramacy_lee_2008}. However, it is often the case that some regions of the space exhibit larger variability compared to others \cite{gramacy_lee_2008}. In many applications, it is more desirable to model the uncertainty over the output space in a non-uniform manner, so that the predictive error also depends on the locally observed response values \cite{gramacy_lee_2008}. 
+
+\vspace{1em}
+
+Thus many real-world applications require the use of more flexible, non-stationary Gaussian processes. However, fully non-stationary Bayesian Gaussian Processes can be difficult to fit and do not scale well computationally to a large number of data-points \cite{gramacy_lee_2008}. Gramacy and Lee (2008) address this problem by proposing partitioning the input space into regions. A stationary Gaussian Process can then fit within each region. Such a partitioning is attractive, as if offers a straightforward mechanism for creating a less computationally-demanding non-stationary Gaussian Process \cite{gramacy_lee_2008}. Under a Bayesian framework, the predictive uncertainty can also be estimated by applying a Bayesian model averaging approach. This approach is capable of flexibly modelling both continuous functions, as well as discontinuities \cite{gramacy_lee_2008}. It additionally also resolves the variability issue, as the estimated predictive error estimated can now account for differing variability between regions of the space \cite{gramacy_lee_2008}. 
+
+\vspace{1em}
+
+In particular, Gramacy and Lee (2008) apply a treed partitioning approach. A Classification and Regression Tree (CART), which which fits a constant surface in each leaf, is used as it is easy to implement and interpret. Their approach involves applying a tree-generating prior to a CART. A Gaussian Process (or any suitable model) is then applied to each partition/leaf of this tree, with hierarchical priors specified for the hyper-parameters \cite{gramacy_lee_2008}. Bayesian model-averaging is then finally applied to average over in the posterior in order to make predictions and estimate predictive uncertainty \cite{gramacy_lee_2008}. This approach was applied to two applications: a computer model simulating the launch of NASA's Langley Glide-Back rocket booster, as well to a real-life application for predicting the acceleration of the head of a motorcycle rider as a function of time \cite{gramacy_lee_2008}. In both cases, the treed Bayesian Gaussian Process showed a superior performance compared to a stationary Gaussian Process, as it was able to model discontinuities (particularly those those by numerical instability of the simulation as well) and account for for the differing levels of uncertainty in the space \cite{gramacy_lee_2008}.
+
+\vspace{1em}
+On the usefulness of computer models, sea-ice models have become increasingly useful in the study of the high-latitude climate system \cite{chapman_1994}. The Arctic Sea-Ice Computer Model in particular, offers valuable information on the effect of ice physics parameters such as drag coefficients, and snowfall rate on outputs such as ice-thickness that are difficult to quantify \cite{chapman_1994}. While stationary Gaussian Processes have shown good performance in modelling specific outputs such as ice area, they showed a lesser predictive accuracy in modelling ice velocity in particular \cite{chapman_1994}. Chapman, Welch, Bowman, Sacks and Walsh (1994) speculated that this may be due to the numerical model being erratic in some regions of the parameter space, which may have reduced predictive power. Given the flexibility of the treed Bayesian Gaussian Process in modelling discontinuities and in accounting for differing variability in the parameter space, it was of interest to see if tree-based approaches can significantly improve the prediction accuracy of ice velocity in the Arctic Sea-Ice Computer Model. 
+
+\vspace{1em}
+
+Specifically, the objective of this report is to compare the performance of a Bayesian stationary Gaussian Process to four tree-based, Bayesian methods: Classification and Regression Trees, Random Forests, Treed Gaussian Processes, and Treed Gaussian Processes with Limiting Linear Regression Models, to the end of potentially improving the predictive accuracy of ice velocity in the Arctic Sea-Ice Computer Model.
+
+
+\section*{Methods}
+
+\subsection*{Computer Model}
+
+The Arctic Sea-Ice computer model is a dynamic formulation based on a momentum balance for a mass of ice within a grid cell. The specific details of the thermodynamic formulation can be found in \cite{chapman_1994}. The purpose of this computer model is to estimate sensitivities of ice physics input parameters on outputs that are key sea ice properties \cite{chapman_1994}. The model was run with a daily time-step from the period of January 1, 1960-1988. It was run on a 110kn polar grid, which covers the Arctic Ocean and nearby bodies of water. Specifically, the data-set has 6 output parameters: Ice mass, Ice area, Ice velocity and Range of Area. For this project, we focus on the Ice velocity variable, which has been shown to be comparatively harder to predict accurately using a stationary GP. The model has 13 ice physics input parameters. These are as follows: 
+
+\begin{itemize}
+
+\item \textbf{Drag coefficients:} These describe the drag forces exerted on ice by air (\texttt{AtmosDrag}) and ocean currents (\texttt{OceanicDrag}). 
+\item \textbf{Ice Strength:} This measure is a function of the grid cell ice thickness and compactness (\texttt{LogIceStr}). It has been log-transformed in the data
+\item \textbf{Minimum lead fraction:} Permits the inclusion of the effect of small-scale motions within a grid cell. These motions tend to maintain a small fraction (several percent) of open water or very thin ice within the pack even during winter, which as most of the ocean-atmosphere exchanges of sensible and latent heat, as well as new ice growth and salt rejection ocur in these regions (\texttt{MinLead})
+\item \textbf{Albedos:} Measure of the diffuse reflection of solar radiation for snow (\texttt{SnowAlbedo}), ice (\texttt{IceAlbedo}) and open-water (\texttt{OpenAlbedo})
+\item \textbf{Exchange coeﬀicient, surface sensible heat:}  Bulk transfer coefficient for sensible heat (\texttt{SensHeat})
+\item \textbf{Exchange coeﬀicient, surface latent heat:}  Bulk transfer coefficient for latent heat (\texttt{LatentHeat})
+\item \textbf{Snowfall rate:} Snowfall at prescribed rates that vary seasonally (\texttt{Snowfall})
+\item \textbf{Cloud depletion of solar flux:} . Downcoming fluxes of solar radiation which vary from the winter to the summer (\texttt{Shortwave})
+\item \textbf{Cloud enhancement of longwave flux:} Downcoming fluxes of longwave radiation which vary from the winter to the summer (\texttt{Longwave})
+\item \textbf{Oceanic heat flux:} prescribed vertical flux of oceanic heat into the mixed layer, which can determine the rate of ice growth and melt (\texttt{OceanicHeat})
+
+
+
+\end{itemize}
+
+\subsection*{Stationary Gaussian Processes}
+
+A real-valued stochastic process $\{ X_t, t \in T \}$ where $X_t$ is a set of random variables indexed by $T$ is a Gaussian Process having a jointly Gaussian distribution for a finite subset of indices if all the finite-dimensional distributions have a multivariate normal distribution \cite{gramacy_lee_2008}. A Gaussian Process is specified by a mean function $\mu(\textbf{x}) = \mathbb{E}(Z(\textbf{x}))$, and a correlation function $R(\textbf{x}, \textbf{x}')$ \cite{gramacy_lee_2008}.
+
+We assume the correlation function can be written as follows:
+
+\begin{equation}
+R(\boldsymbol{x_j},\boldsymbol{x_k}|g) = R^{*}(\boldsymbol{x_j},\boldsymbol{x_k}) +g \delta_{j,k}
+\end{equation}
+
+where $R^{*}(\boldsymbol{x_j},\boldsymbol{x_k})$ represents a parametric correlation function family, $\delta_{j,k}$ represents the Kronecker delta function and $g$ is the nugget term \cite{gramacy_lee_2008}.
+
+For this project, we consider $R^{*}(\boldsymbol{x_j},\boldsymbol{x_k})$ to represent the power family of correlation functions.
+
+\begin{equation}
+\label{eq:1}
+R^{*}(\boldsymbol{x_j},\boldsymbol{x_k}|d) = \text{exp} \left\{ \frac{\lVert \boldsymbol{x_j} - \boldsymbol{x_k}\rVert^{p_0}}{d} \right\}
+\end{equation}
+
+where $d > 0$ represents a single range parameter. This constant correlation structure is used for a stationary Gaussian Process. Thus, the correlation between two points only depends on the Euclidean distance between them \cite{gramacy_lee_2008}.
+
+The linear predictive distribution of this Gaussian Process is univariate normal, with mean 
+\begin{equation}
+\label{eq:12}
+f^{T}(\boldsymbol{x}^{*})\boldsymbol{\beta} + r^{T}(\boldsymbol{x}^{*})\boldsymbol{R}^{-1}(\boldsymbol{y}-\boldsymbol{F}\boldsymbol{\beta})
+\end{equation}
+and variance 
+\begin{equation}
+\sigma^2(1-\boldsymbol{r}^T(\boldsymbol{x}^{*})\boldsymbol{R}^{-1}\boldsymbol{r}(\boldsymbol{x}^{*}))
+\end{equation}
+
+Thus, the predictive uncertainty does not depend directly on the locally observed values \cite{gramacy_lee_2008}. Rather, the predictive error at a point depends only a global measure of error that uses the distance between observations and predictions, without regard for their distance from their location in the parameter space \cite{gramacy_lee_2008}. 
+
+We implement this stationary Gaussian Process in a Bayesian framework (the prior specification is described below), as a baseline to compare our treed methods to.
+
+\subsection*{Extending the Power Correlation Function for Treed Partitioning}
+
+The power correlation function specified in \ref{eq:1} can be trivially modified for the partitioned applications to be implemented in this project by using a separate range parameter $d_i$ for each dimension $(i = 1,...., m_x)$ as follows:
+
+\begin{equation}
+\label{eq:13}
+R^{*}(\boldsymbol{x_j},\boldsymbol{x_k}|d) = \text{exp} \left\{ \frac{\lVert \boldsymbol{x_j} - \boldsymbol{x_k}\rVert^{p_0}}{d_i} \right\}
+\end{equation}
+
+This allows the covariance structure to vary over the parameter space by varying between the partition region \cite{gramacy_lee_2008}. One can therefore model correlations in some input variables as stronger than others \cite{gramacy_lee_2008}.This function is known as the \textit{separable} power family \cite{gramacy_2007}. This correlation structure was used for all the treed Gaussian Process approaches implemented for this project. The power exponential function with a constant range $d$ was used for the stationary Gaussian Process.
+
+\subsection*{Treed Partitioning using a Regression Tree}
+
+Treed partitioning using a regression tree (since our output is continuous) is the approach that is used here to partition the input space. Classification and regression tree models are binary decision trees that  divide up the predictor space repeatedly into partitions (or nodes) based on the value of a single splitting variable \cite{hu_2011}. Partitioning the space in this manner progressively increases the homogeneity of the output variable within each node \cite{hu_2011}. For our continuous response variable here, a regression tree is built, predicts the average response within a node \cite{hu_2011}. The splitting variable is chosen uniformly at each node out of all the input variables available \cite{chipman_1998}. The splitting point is also chosen randomly from all the points available within the space of the splitting variable \cite{chipman_1998}. 
+
+\subsection*{Hierarchical Priors Specification for the Gaussian Process}
+
+Each partitioned region contains data, $D_v = \{\boldsymbol{X}_v, \boldsymbol{Z}_v\}$, each consisting of $n_v$ observations \cite{gramacy_lee_2008}.
+Let $m = m_{X} + 1$ be the number of covariates in the design matrix $X$ plus an intercept \cite{gramacy_lee_2008}. The heirarchical generative model is as follows:
+\begin{equation}
+\label{eq:2}
+\begin{aligned}
+\boldsymbol{Z_v}|\boldsymbol{\beta_v}, \sigma_v^2, \boldsymbol{K_v} \sim N_{n_v}(\boldsymbol{F_v}\boldsymbol{\beta_v}, \sigma_v^2, \boldsymbol{K_v})
+\\
+\boldsymbol{\beta_v}|\sigma_v^2, \tau_v^2, \boldsymbol{W}, \boldsymbol{\beta_0} \sim N_m(\boldsymbol{\beta_0}, \sigma_v^2 \tau_v^2\boldsymbol{W})
+\\
+\boldsymbol{\beta_0} \sim N_m(\boldsymbol{\mu}, \boldsymbol{B})
+\\
+\sigma_v^2 \sim IG(\alpha_{\sigma}/2, q_{\sigma}/2)
+\\
+\tau_v^2 \sim IG(\alpha_{T}/2, q_{T}/2)
+\\
+\boldsymbol{W}^{-1} \sim W((\rho\boldsymbol{V})^{-1}, \rho)
+\end{aligned}
+\end{equation}
+
+The constants $\boldsymbol{\mu}$, $\rho$, $\alpha_{\sigma}$, $q_{\sigma}$, $\alpha_{T}$ , $q_{T}$ are treated as known \cite{gramacy_lee_2008}. This model specifies a multivariate normal likelihood with linear trend coefficients $\boldsymbol{\beta_v}$ , variance $\sigma_v^2$, and correlation matrix $K_v$ \cite{gramacy_lee_2008}. The coefficients $\boldsymbol{\beta_v}$ are believed to have come from a common unknown mean $\boldsymbol{\beta_0}$ and region-specific variance $\sigma_v^2 \tau_v^2$. The range $d_i$ and nugget $g$ are considered to be random in the correlation function \cite{gramacy_lee_2008}. An exponential prior is used for the nugget $g$. 
+
+\subsubsection*{Bayesian CART}
+
+The Bayesian CART model essentially represents a Classification and Regression model with the addition of a tree-generating prior. This tree-generating prior ideally guides the stochastic search within the tree space towards more promising regression models. Here, we use the prior specified in \cite{chipman_1998}, which is parameterized as follows: 
+\begin{equation}
+p_{SPLIT}(\eta, \mathcal{T})= \alpha(1+q_{\eta})^{-b}    
+\end{equation}
+
+Here, we use the default values of $\alpha = 0.5$ and $b = 2$, which have been recommended by Gramacy and Lee (2008) for showing good empirical performance \cite{gramacy_lee_2008}. In this parameterization, the decreasing function of $q_{\eta}$ making deeper nodes less likely to split and supports "bushy" trees whose terminal nodes do not vary too much in depth \cite{gramacy_lee_2008}. Zero probability is also automatically given here for this dataset to partitions containing less than 10 data-points \cite{gramacy_2007}. 
+
+\subsubsection*{Bayesian Treed GP}
+
+The Bayesian Treed Gaussian Process first involves the partitioning of the input region using the CART approach. Typical runs of the treed GP on this data generally found two to three partitions in trees \cite{gramacy_lee_2008}. A stationary Gaussian Process is then fitted to each of the terminal nodes (leafs) of the generated trees \cite{gramacy_lee_2008}.
+
+\subsubsection*{Bayesian Treed LLM GP}
+
+Here we additionally consider a special limiting case of the Gaussian Process, which is the standard linear model. Specifically, this model can be parameterized by changing the hierarchical specification of  \boldsymbol{Z_v} in \ref{eq:2} to the following:
+\begin{equation}
+\boldsymbol{Z_v}|\boldsymbol{\beta_v}, \sigma_v^2, \boldsymbol{K_v} \sim N_{n_v}(\boldsymbol{F_v}\boldsymbol{\beta_v}, \sigma_v^2, \boldsymbol{I})
+\end{equation}
+
+Specifically, while some regions of the partition space can only be modelled well with a Gaussian Process, it is possible that a GP may be unnecessarily computationally expensive for other regions \cite{gramacy_lee_2008}. Thus, a limiting linear model (LLM) can be implemented through a model-switching "mixture" prior. In particular, the mixture prior is encoded so that  GPs with larger estimated range parameters will be more likely to “jump” to the LLM \cite{gramacy_2007}. A mixture-of-gamma priors is thus used for $d$ \cite{gramacy_2007}. This prior gives roughly equal mass to small $d$ representing a population of GP parameterizations for more wavy surfaces as well as for surfaces that are quite smooth or approximately linear \cite{gramacy_2007}. The details of this prior can be found in \cite{gramacy_2007}.
+
+\subsection*{Predictions and Bayesian Model Averaging}
+
+As a stationary GP is fit to each partition/node of the tree, the linear predictive distribution of each GP in each of the $v$ partition regions resembles \ref{eq:12}. This posterior predictive surface is conditional on a particular tree $\mathcal{T}$. Bayesian model averaging is thus applied to marginalize over trees and derive the posterior distribution of the GP parameters as follows:
+\begin{equation}
+P(\theta) = \sum_{v=1}^{R} P(\theta_v, \mathcal{T}_v) = \sum_{v=1}^{R} P(\mathcal{T}_v)P(\theta_v|\mathcal{T}_v)
+\end{equation}
+where $\theta_v$ represents the set of the GP parameters \cite{gramacy_lee_2008}. 
+
+\subsection*{Random Forests}
+
+Random Forests, an ensemble approach, is another tree-based approach, which shares the idea of averaging predictions from many classification and regression trees. In a random forests algorithm, the number of predictors is limited at each split or node of a tree to a different random subset of predictor variables (\texttt{mtry}) \cite{hastie_friedman_tisbshirani_2017}. This is done to prevent one or a few predictors from dominating the trees and reduces the correlation between trees as well, which works particularly well to reduce the variance of bagging \cite{hastie_friedman_tisbshirani_2017}. 
+
+Essentially, $M$ bootstrap ensembles are generated from the training data-set \cite{hastie_friedman_tisbshirani_2017}. A learning method, $\hat{f}^m(\textbf{x})$ is then trained on each of the $m$ bootstrap ensembles, in order to produce  predictions for each random-forest tree, which are then averaged and combined to obtain average predictions for the data, where $\hat{f}_{bag}(\textbf{x})$ is:
+
+\begin{equation}
+ \hat{f}_{bag}(\textbf{x}) = \frac{1}{M}\sum\limits^{M}_{m=1}\hat{f}^m(\textbf{x})
+\end{equation}
+
+Specifically, for a regression random forests model, the average of the predictions made by each of the individual trees generated is used to generate the "final" predictions.
+
+\subsection*{Cross-Validation to evaluate model performance}
+
+$K$-fold Cross-validation is a manifestion of a training/validation/testing framework which is used here for comparatively evaluating model performance, where the data is split into $K$ roughly equal-sized parts \cite{hastie_friedman_tisbshirani_2017}. For each part, the model is fit to the other $K-1$ parts of the data. The root-mean squared error (RMSE) of the fitted model is then calculated for each of these $k$ cases \cite{hastie_friedman_tisbshirani_2017}. The $K$ estimates of RMSE are then combined as the average. Specifically 10-fold cross-validation is used here. Reasons to use 10-folds include a relatively balanced bias-variance trade-off \cite{hastie_friedman_tisbshirani_2017}. 
+
+
+\subsection*{Analysis Set-Up}
+
+All analyses were run using \texttt{R} (version 4.1.2). All the Bayesian CART and GP models, i.e the Bayesian CART, stationary GP, the treed GP and the treed LLM GP were run using the \texttt{R} package \texttt{tgp} \cite{gramacy_2007}. The package uses Gibbs sampling for the prior hyperparameters, Metropolis-Hastings for the correlation prior hyperparameters, and Reversible Jump (RJ)-MCMC for the Bayesian Model Averaging.All the Bayesian models were run with two restarts in order to better explore the marginal posterior for $\mathcal{T}$ \cite{chipman_1998}. The \textit{separable} correlation function was used for all the Gaussian Processes run as specified in \ref{eq:13}. The random forest model was run using the \texttt{ranger} package \cite{ranger}. Two hyper-parameters: the number of random variables available at each split (\texttt{mtry}) and the number of trees (\texttt{ntrees}) were tuned using 5-fold cross-validation via the \texttt{e1071} package \cite{e1071}. The hyperparameters were tuned over a grid of 1-13 for \texttt{mtry} (which encompasses $M = \sqrt{p}$, a typical empirical rule of thumb) and 100-800 trees in increments of 100 for \texttt{ntree} (which encompasses $p \times 10$, also a typical empirical rule of thumb) \cite{boehmke_greenwell_2020}. The performance of all five models were then compared using the averaged RMSE generated from 10-fold cross-validation. 
+\section*{Results and Discussion}
+
+Tuning the random forest hyper-parameters according to our specified grid yielded \texttt{mtry} = 13 and \texttt{ntree} = 300 to have the lowest mean squared error. Thus, these hyper-parameter values were used in the final model compared to the Gaussian Processes. Figure \ref{fig:Tschunks1und2} depicts the mean root mean squared errors obtained by the five models, while Table \ref{tab:unnamed-chunk-1} presents a five-number summary of the 10 root mean squared errors obtained via 10-fold cross-validation. Overall, we see that the Treed LLM GP shows the lowest RMSE, while the random forests algorithm shows the next lowest RMSE. It should be noted that none of the RMSEs of the GP fits and the random forests model have an extremely significant discrepancy. However, the Bayesian CART model seems to have a dramatically large RMSE compared to the other models. 
+\par \smallskip
+Figure \ref{fig:test} shows the measure of uncertainty of the joint posterior predictive mean surface of \texttt{MinLead} and \texttt{OpenAlbedo} for both the stationary Gaussian Process and for the Treed LLM Gaussian Process. It is quite interesting to see that for the stationary GP, the one of the regions with the highest predictive uncertainty coincides with having the lowest relative sampling. The treed GP on the other hand was able to partition the input space to separate out the larger "uninteresting" parts of the input space, as well as obtain sharper regional estimates of predictive uncertainty in this case. While this improves the sampling of the regions with the highest predictive uncertainty, they do still seem to remain relatively undersampled in either model.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.40\textwidth]{RMSE.png} 
+  \caption{Summarizing mean root mean squared errors (RMSE) obtained with various models used to predict the Ice Velocity over 10-fold cross-validations (Mean $\pm$ SE)} 
+  \label{fig:Tschunks1und2}
+\end{figure}
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{table}[H]
+
+\caption{\label{tab:unnamed-chunk-1} Five Number RMSE Summary for various models used to predict the Ice Velocity over 10-fold cross-validations}
+\centering
+\begin{tabular}[t]{lrrrrr}
+\toprule
+  & CART & GP & Treed GP & Treed LLM GP & Random Forests\\
+\midrule
+\cellcolor{gray!6}{Mean} & \cellcolor{gray!6}{18.43} & \cellcolor{gray!6}{13.12} & \cellcolor{gray!6}{13.08} & \cellcolor{gray!6}{12.72} & \cellcolor{gray!6}{12.78}\\
+Median & 19.01 & 12.78 & 12.65 & 11.31 & 13.15\\
+\cellcolor{gray!6}{5\%} & \cellcolor{gray!6}{14.93} & \cellcolor{gray!6}{8.83} & \cellcolor{gray!6}{8.63} & \cellcolor{gray!6}{7.26} & \cellcolor{gray!6}{9.94}\\
+95\% & 22.75 & 18.07 & 17.40 & 15.94 & 15.14\\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{knitrout}
+
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.50\textwidth]{map-tree.png} 
+  \caption{\textit{Maximum a' posteriori} (\texttt{MAP}) height tree from the Bayesian Treed LLM GP. The \texttt{MAP} tree is of height 2 and its log posterior probability is 341.928. The splitting variable here is \texttt{OceanicDrag}. The text at the leaves of the tree show the number of input data points that fall into the partitions with an estimate of the variability within.}
+  \label{fig:T2}
+\end{figure}
+
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=0.85\linewidth]{statgp.png}
+  \caption{Stationary Gaussian Process}
+  \label{fig:sub1}
+\end{subfigure}%
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=0.85\linewidth]{treedgp.png}
+  \caption{Treed LLM Gaussian Process}
+  \label{fig:sub2}
+\end{subfigure}
+\caption{Measure of uncertainty of the joint posterior predictive mean surface of \texttt{MinLead} and \texttt{OpenAlbedo} given by the difference in 95\% and 5\% quantiles of samples from the posterior predictive distribution. The locations sampled by the MCMC algorithm are shown as dots}
+\label{fig:test}
+\end{figure}
+
+It is quite interesting that the treed LLM GP seemed to perform marginally better compared to the treed GP. Thinking about the \texttt{MAP} tree from the Bayesian Treed LLM GP presented in \ref{fig:T2}, the two terminal partition tree seems to have the highest posterior probability, indicating that the inputs in one subset of the data are likely quite linear with respect to ice velocity. 
+
+\section*{Conclusions and Future Directions}
+
+Overall, we see that in terms of the RMSE, the treed GP (and specifically the treed GP with a limiting linear model) only marginally outperforms the stationary GP in terms of predicting Ice velocity, with the random forests model a close second. However, looking at the measure of uncertainty in one of the joint posterior distributions between two variables, we do see that the treed GP seems to be able to quantify sharper regional estimates of uncertainty. This model may thus be the better choice compared to a stationary GP, particularly for further use in sensitivity analyses of the parameters. In terms of prediction however, the relatively more parsimonious random forests model also presents an RMSE that is quite on par with that of the treed GP. Overall, with the exception of the Bayesian CART, the treed approaches explored in this project do relatively well in predicting the Ice velocity. 
+\smallskip \par
+It may be interesting to explore a reduced random forests model with only the "important variables", which can be identified by the change in accuracy by randomly permuting variables using out-of-bag samples. Different values of the hyper-parameters ($\alpha$ and $b$) for the tree-generating prior should also be explored, ideally through looking at the consequent prior marginal distribution of some characteristic of interest, such as the number of terminal nodes \cite{chipman_george_mcculloch_1998}. This could possibly improve the performance of the Bayesian CART model as well. On this note, model calibration should also be performed to evaluate the tree-generating prior, the hyper-parameters and the hierarchical model generative process for this dataset. On the basis of the treed LLM GP performing marginally better than the treed GP, it might be interesting to add a linear model fit to the full data to this comparison.  Lastly, in terms of additionally improving the performance of the treed GP's, the \texttt{tgp} package additionally offers other MCMC sampling schemes, such as adaptive sampling. Implementing this might help to increase the sampling coverage in the largest areas of predictive uncertainty, such as the instance discussed above, which could potentially improve predictive performance. 
+
+\newpage
+
+\printbibliography 
+
+\newpage
+
+\section*{Appendix}
+
+\subsection{Code}
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# Libraries}
+\hlkwd{library}\hlstd{(tgp)}
+\hlkwd{library}\hlstd{(randomForest)}
+\hlkwd{library}\hlstd{(MASS)}
+\hlkwd{library}\hlstd{(e1071)}
+\hlkwd{library}\hlstd{(tidymodels)}
+\hlkwd{library}\hlstd{(ggplot2)}
+\hlkwd{library}\hlstd{(forcats)}
+
+\hlcom{# Reading in Wonderland data}
+\hlstd{input} \hlkwb{<-} \hlkwd{read.csv}\hlstd{(}\hlstr{"ice_x.csv"}\hlstd{)}
+\hlstd{output} \hlkwb{<-} \hlkwd{read.csv}\hlstd{(}\hlstr{"ice_y.csv"}\hlstd{)}
+
+\hlcom{# Keeping only ice velocity }
+\hlstd{x} \hlkwb{<-} \hlstd{input}
+\hlstd{y} \hlkwb{<-} \hlstd{output}\hlopt{$}\hlstd{IceVelocity}
+
+\hlcom{# Combining into one dataset}
+\hlstd{dat} \hlkwb{<-} \hlkwd{data.frame}\hlstd{(}\hlkwd{cbind}\hlstd{(x, y))}
+
+\hlcom{# Create cross-validation folds }
+\hlkwd{set.seed}\hlstd{(}\hlnum{112}\hlstd{)}
+\hlstd{folds}  \hlkwb{<-} \hlkwd{vfold_cv}\hlstd{(dat,} \hlkwc{v} \hlstd{=} \hlnum{10}\hlstd{)}
+
+\hlcom{# For Bayesian CART model }
+\hlstd{cv_fit1} \hlkwb{<-} \hlkwa{function}\hlstd{(}\hlkwc{splits}\hlstd{,}\hlkwc{...}\hlstd{) \{}
+  \hlstd{ZZ} \hlkwb{<-} \hlkwd{assessment}\hlstd{(splits)}\hlopt{$}\hlstd{y}
+ \hlstd{fit1} \hlkwb{<-} \hlkwd{bcart}\hlstd{(}\hlkwc{X} \hlstd{=} \hlkwd{analysis}\hlstd{(splits)[,}\hlopt{-}\hlnum{14}\hlstd{],}
+               \hlkwc{Z} \hlstd{=} \hlkwd{analysis}\hlstd{(splits)}\hlopt{$}\hlstd{y,} \hlkwc{XX} \hlstd{=} \hlkwd{assessment}\hlstd{(splits)[,}\hlopt{-}\hlnum{14}\hlstd{])}
+ \hlstd{rmse} \hlkwb{<-} \hlkwd{sqrt}\hlstd{(}\hlkwd{mean}\hlstd{((fit1}\hlopt{$}\hlstd{ZZ.mean} \hlopt{-} \hlstd{ZZ)}\hlopt{^}\hlnum{2}\hlstd{))}
+  \hlkwd{return}\hlstd{(rmse)}
+\hlstd{\}}
+
+\hlcom{# Fitting entire training set}
+\hlstd{fit_cart} \hlkwb{<-} \hlkwd{bcart}\hlstd{(}\hlkwc{X} \hlstd{= x,} \hlkwc{Z} \hlstd{= y)}
+
+\hlkwd{plot}\hlstd{(fit_cart)}
+
+
+\hlcom{# For Bayesian stationary model }
+\hlstd{cv_fit2} \hlkwb{<-} \hlkwa{function}\hlstd{(}\hlkwc{splits}\hlstd{,}\hlkwc{...}\hlstd{) \{}
+  \hlstd{ZZ} \hlkwb{<-} \hlkwd{assessment}\hlstd{(splits)}\hlopt{$}\hlstd{y}
+ \hlstd{fit2} \hlkwb{<-} \hlkwd{bgp}\hlstd{(}\hlkwc{X} \hlstd{=} \hlkwd{analysis}\hlstd{(splits)[,}\hlopt{-}\hlnum{14}\hlstd{],}
+               \hlkwc{Z} \hlstd{=} \hlkwd{analysis}\hlstd{(splits)}\hlopt{$}\hlstd{y,} \hlkwc{XX} \hlstd{=} \hlkwd{assessment}\hlstd{(splits)[,}\hlopt{-}\hlnum{14}\hlstd{],}
+               \hlkwc{bprior} \hlstd{=} \hlstr{"b0"}\hlstd{,} \hlkwc{R} \hlstd{=} \hlnum{2}\hlstd{,} \hlkwc{corr} \hlstd{=} \hlstr{"exp"}\hlstd{)}
+ \hlstd{rmse} \hlkwb{<-} \hlkwd{sqrt}\hlstd{(}\hlkwd{mean}\hlstd{((fit2}\hlopt{$}\hlstd{ZZ.mean} \hlopt{-} \hlstd{ZZ)}\hlopt{^}\hlnum{2}\hlstd{))}
+  \hlkwd{return}\hlstd{(rmse)}
+\hlstd{\}}
+
+\hlcom{# Fitting stationary GP}
+\hlstd{fit_bgp} \hlkwb{<-}  \hlkwd{bgp}\hlstd{(}\hlkwc{X} \hlstd{= x,} \hlkwc{Z} \hlstd{= y,}  \hlkwc{bprior} \hlstd{=} \hlstr{"b0"}\hlstd{,} \hlkwc{corr} \hlstd{=} \hlstr{"exp"}\hlstd{,} \hlkwc{R} \hlstd{=} \hlnum{2}\hlstd{,} \hlkwc{trace} \hlstd{=} \hlnum{TRUE}\hlstd{)}
+
+
+
+\hlcom{# For Bayesian treed GP model }
+\hlstd{cv_fit3} \hlkwb{<-} \hlkwa{function}\hlstd{(}\hlkwc{splits}\hlstd{,}\hlkwc{...}\hlstd{) \{}
+  \hlstd{ZZ} \hlkwb{<-} \hlkwd{assessment}\hlstd{(splits)}\hlopt{$}\hlstd{y}
+ \hlstd{fit3} \hlkwb{<-} \hlkwd{btgp}\hlstd{(}\hlkwc{X} \hlstd{=} \hlkwd{analysis}\hlstd{(splits)[,}\hlopt{-}\hlnum{14}\hlstd{],} \hlkwc{Z} \hlstd{=} \hlkwd{analysis}\hlstd{(splits)}\hlopt{$}\hlstd{y,} \hlkwc{XX} \hlstd{=} \hlkwd{assessment}\hlstd{(splits)[,}\hlopt{-}\hlnum{14}\hlstd{],}
+              \hlkwc{bprior} \hlstd{=} \hlstr{"b0"}\hlstd{,} \hlkwc{R} \hlstd{=} \hlnum{2}\hlstd{)}
+  \hlstd{rmse} \hlkwb{<-} \hlkwd{sqrt}\hlstd{(}\hlkwd{mean}\hlstd{((fit3}\hlopt{$}\hlstd{ZZ.mean} \hlopt{-} \hlstd{ZZ)}\hlopt{^}\hlnum{2}\hlstd{))}
+  \hlkwd{return}\hlstd{(rmse)}
+\hlstd{\}}
+
+\hlcom{# For Bayesian treed GP with limiting linear model}
+\hlstd{cv_fit4} \hlkwb{<-} \hlkwa{function}\hlstd{(}\hlkwc{splits}\hlstd{,}\hlkwc{...}\hlstd{) \{}
+  \hlstd{ZZ} \hlkwb{<-} \hlkwd{assessment}\hlstd{(splits)}\hlopt{$}\hlstd{y}
+ \hlstd{fit4} \hlkwb{<-} \hlkwd{btgpllm}\hlstd{(}\hlkwc{X} \hlstd{=} \hlkwd{analysis}\hlstd{(splits)[,}\hlopt{-}\hlnum{14}\hlstd{],} \hlkwc{Z} \hlstd{=} \hlkwd{analysis}\hlstd{(splits)}\hlopt{$}\hlstd{y,}
+                 \hlkwc{XX} \hlstd{=} \hlkwd{assessment}\hlstd{(splits)[,}\hlopt{-}\hlnum{14}\hlstd{],} \hlkwc{bprior} \hlstd{=} \hlstr{"b0"}\hlstd{,} \hlkwc{R} \hlstd{=} \hlnum{2}\hlstd{)}
+ \hlstd{rmse} \hlkwb{<-} \hlkwd{sqrt}\hlstd{(}\hlkwd{mean}\hlstd{((fit4}\hlopt{$}\hlstd{ZZ.mean} \hlopt{-} \hlstd{ZZ)}\hlopt{^}\hlnum{2}\hlstd{))}
+  \hlkwd{return}\hlstd{(rmse)}
+\hlstd{\}}
+
+\hlcom{# Running GP LLM model}
+\hlcom{# d[0/] means LLM is active}
+\hlstd{fit_llm} \hlkwb{<-}  \hlkwd{btgpllm}\hlstd{(}\hlkwc{X} \hlstd{= x,} \hlkwc{Z} \hlstd{= y,}  \hlkwc{bprior} \hlstd{=} \hlstr{"b0"}\hlstd{,} \hlkwc{R} \hlstd{=} \hlnum{2}\hlstd{,} \hlkwc{trace} \hlstd{=} \hlnum{TRUE}\hlstd{)}
+
+\hlcom{# MAP tree }
+\hlkwd{png}\hlstd{(}\hlkwc{filename} \hlstd{=} \hlstr{"map-tree.png"}\hlstd{,} \hlkwc{width} \hlstd{=} \hlnum{16}\hlstd{,} \hlkwc{height} \hlstd{=} \hlnum{14}\hlstd{,} \hlkwc{units} \hlstd{=} \hlstr{"cm"}\hlstd{,} \hlkwc{res} \hlstd{=} \hlnum{300}\hlstd{)}
+\hlkwd{tgp.trees}\hlstd{(fit_llm)}
+\hlkwd{dev.off}\hlstd{()}
+
+\hlcom{# A few plots}
+\hlkwd{png}\hlstd{(}\hlkwc{filename} \hlstd{=} \hlstr{"statgp.png"}\hlstd{,} \hlkwc{width} \hlstd{=} \hlnum{20}\hlstd{,} \hlkwc{height} \hlstd{=} \hlnum{14}\hlstd{,} \hlkwc{units} \hlstd{=} \hlstr{"cm"}\hlstd{,} \hlkwc{res} \hlstd{=} \hlnum{300}\hlstd{)}
+\hlkwd{plot}\hlstd{(fit_bgp,} \hlkwc{proj} \hlstd{=} \hlkwd{c}\hlstd{(}\hlnum{3}\hlstd{,} \hlnum{12}\hlstd{))}
+
+\hlkwd{dev.off}\hlstd{()}
+\hlkwd{png}\hlstd{(}\hlkwc{filename} \hlstd{=} \hlstr{"treedgp.png"}\hlstd{,} \hlkwc{width} \hlstd{=} \hlnum{20}\hlstd{,} \hlkwc{height} \hlstd{=} \hlnum{14}\hlstd{,} \hlkwc{units} \hlstd{=} \hlstr{"cm"}\hlstd{,} \hlkwc{res} \hlstd{=} \hlnum{300}\hlstd{)}
+\hlkwd{plot}\hlstd{(fit_llm,} \hlkwc{proj} \hlstd{=} \hlkwd{c}\hlstd{(}\hlnum{3}\hlstd{,} \hlnum{12}\hlstd{))}
+\hlkwd{dev.off}\hlstd{()}
+
+\hlcom{# Extracting RMSE's }
+\hlstd{res_cv_train} \hlkwb{<-}
+  \hlstd{folds} \hlopt{%>%}
+  \hlkwd{mutate}\hlstd{(}\hlkwc{res_rmse1} \hlstd{=} \hlkwd{map}\hlstd{(splits,} \hlkwc{.f} \hlstd{= cv_fit1) ,}
+    \hlkwc{res_rmse2} \hlstd{=} \hlkwd{map}\hlstd{(splits,} \hlkwc{.f} \hlstd{= cv_fit2),}
+         \hlkwc{res_rmse3} \hlstd{=} \hlkwd{map}\hlstd{(splits,} \hlkwc{.f} \hlstd{= cv_fit3),}
+    \hlkwc{res_rmse4} \hlstd{=} \hlkwd{map}\hlstd{(splits,} \hlkwc{.f} \hlstd{= cv_fit4))}
+
+\hlcom{# Mean of RMSE's}
+\hlstd{rmse_cart} \hlkwb{<-} \hlkwd{sqrt}\hlstd{(}\hlkwd{mean}\hlstd{((}\hlkwd{unlist}\hlstd{(res_cv_train}\hlopt{$}\hlstd{res_rmse1))}\hlopt{^}\hlnum{2}\hlstd{))}
+\hlstd{rmse_gp} \hlkwb{<-} \hlkwd{sqrt}\hlstd{(}\hlkwd{mean}\hlstd{((}\hlkwd{unlist}\hlstd{(res_cv_train}\hlopt{$}\hlstd{res_rmse2))}\hlopt{^}\hlnum{2}\hlstd{))}
+\hlstd{rmse_tgp} \hlkwb{<-} \hlkwd{sqrt}\hlstd{(}\hlkwd{mean}\hlstd{((}\hlkwd{unlist}\hlstd{(res_cv_train}\hlopt{$}\hlstd{res_rmse3))}\hlopt{^}\hlnum{2}\hlstd{))}
+\hlstd{rmse_tgpllm} \hlkwb{<-} \hlkwd{sqrt}\hlstd{(}\hlkwd{mean}\hlstd{((}\hlkwd{unlist}\hlstd{(res_cv_train}\hlopt{$}\hlstd{res_rmse4))}\hlopt{^}\hlnum{2}\hlstd{))}
+\hlstd{var_cart} \hlkwb{<-} \hlkwd{sqrt}\hlstd{(}\hlkwd{var}\hlstd{((}\hlkwd{unlist}\hlstd{(res_cv_train}\hlopt{$}\hlstd{res_rmse1))))}\hlopt{/}\hlkwd{sqrt}\hlstd{(}\hlnum{10}\hlstd{)}
+\hlstd{var_gp} \hlkwb{<-} \hlkwd{sqrt}\hlstd{(}\hlkwd{var}\hlstd{((}\hlkwd{unlist}\hlstd{(res_cv_train}\hlopt{$}\hlstd{res_rmse2))))}\hlopt{/}\hlkwd{sqrt}\hlstd{(}\hlnum{10}\hlstd{)}
+\hlstd{var_tgp} \hlkwb{<-} \hlkwd{sqrt}\hlstd{(}\hlkwd{var}\hlstd{((}\hlkwd{unlist}\hlstd{(res_cv_train}\hlopt{$}\hlstd{res_rmse3))))}\hlopt{/}\hlkwd{sqrt}\hlstd{(}\hlnum{10}\hlstd{)}
+\hlstd{var_tgpllm} \hlkwb{<-} \hlkwd{sqrt}\hlstd{(}\hlkwd{var}\hlstd{((}\hlkwd{unlist}\hlstd{(res_cv_train}\hlopt{$}\hlstd{res_rmse4))))}\hlopt{/}\hlkwd{sqrt}\hlstd{(}\hlnum{10}\hlstd{)}
+
+
+\hlcom{# CV varying mtry and ntree }
+\hlstd{ice.tune} \hlkwb{<-}  \hlkwd{tune.randomForest}\hlstd{(y} \hlopt{~}\hlstd{.,} \hlkwc{data} \hlstd{= dat,} \hlkwc{mtry} \hlstd{=} \hlnum{1}\hlopt{:}\hlnum{13}\hlstd{,} \hlkwc{ntree}\hlstd{=}\hlnum{100}\hlopt{*}\hlnum{1}\hlopt{:}\hlnum{8}\hlstd{,}
+                                   \hlkwc{tunecontrol} \hlstd{=} \hlkwd{tune.control}\hlstd{(}\hlkwc{sampling} \hlstd{=} \hlstr{"cross"}\hlstd{,}\hlkwc{cross}\hlstd{=}\hlnum{5}\hlstd{))}
+
+
+\hlcom{# Random forests}
+\hlcom{# Setting up model with mtry = 13 and ntree = 300}
+\hlstd{rf_mod} \hlkwb{<-}
+  \hlkwd{rand_forest}\hlstd{(}\hlkwc{mtry} \hlstd{=} \hlnum{13}\hlstd{,} \hlkwc{ntree} \hlstd{=} \hlnum{300}\hlstd{)} \hlopt{%>%}
+  \hlkwd{set_engine}\hlstd{(}\hlstr{"ranger"}\hlstd{)} \hlopt{%>%}
+  \hlkwd{set_mode}\hlstd{(}\hlstr{"regression"}\hlstd{)}
+
+\hlcom{# Running random forests}
+\hlstd{rf_fit} \hlkwb{<-}
+  \hlstd{rf_mod} \hlopt{%>%}
+  \hlkwd{fit}\hlstd{(y} \hlopt{~} \hlstd{.,} \hlkwc{data} \hlstd{= dat)}
+
+\hlcom{# Workflow for cross-validation}
+\hlstd{rf_wf} \hlkwb{<-}
+  \hlkwd{workflow}\hlstd{()} \hlopt{%>%}
+  \hlkwd{add_model}\hlstd{(rf_mod)} \hlopt{%>%}
+  \hlkwd{add_formula}\hlstd{(y} \hlopt{~} \hlstd{.)}
+
+\hlcom{# Fit on 10-folds}
+\hlstd{rf_fit_rs} \hlkwb{<-}
+  \hlstd{rf_wf} \hlopt{%>%}
+  \hlkwd{fit_resamples}\hlstd{(folds)}
+
+\hlcom{# Use tune package to collect metrics}
+\hlkwd{collect_metrics}\hlstd{(rf_fit_rs)}
+
+\hlcom{# Plotting RMSE's}
+\hlstd{rmses} \hlkwb{<-} \hlkwd{c}\hlstd{(rmse_cart, rmse_gp, rmse_tgp,} \hlkwd{collect_metrics}\hlstd{(rf_fit_rs)}\hlopt{$}\hlstd{mean[}\hlnum{1}\hlstd{], rmse_tgpllm)}
+\hlstd{sds} \hlkwb{<-} \hlkwd{c}\hlstd{(var_cart, var_gp, var_tgp,} \hlkwd{collect_metrics}\hlstd{(rf_fit_rs)}\hlopt{$}\hlstd{std_err[}\hlnum{1}\hlstd{], var_tgpllm)}
+\hlstd{mod} \hlkwb{<-} \hlkwd{c}\hlstd{(}\hlstr{"CART"}\hlstd{,} \hlstr{"Stationary GP"}\hlstd{,} \hlstr{"Treed GP"}\hlstd{,} \hlstr{"Random Forest"}\hlstd{,} \hlstr{"Treed LLM GP"}\hlstd{)}
+\hlcom{# Data framing }
+\hlstd{dat_plot} \hlkwb{<-} \hlkwd{data.frame}\hlstd{(}\hlkwd{cbind}\hlstd{(rmses, sds, mod))}
+\hlcom{# Convert class}
+\hlstd{dat_plot[,} \hlnum{1}\hlopt{:}\hlnum{2}\hlstd{]} \hlkwb{<-} \hlkwd{lapply}\hlstd{(dat_plot[,} \hlnum{1}\hlopt{:}\hlnum{2}\hlstd{], as.numeric)}
+\hlkwd{png}\hlstd{(}\hlkwc{filename} \hlstd{=} \hlstr{"RMSE.png"}\hlstd{,} \hlkwc{width} \hlstd{=} \hlnum{16}\hlstd{,} \hlkwc{height} \hlstd{=} \hlnum{14}\hlstd{,} \hlkwc{units} \hlstd{=} \hlstr{"cm"}\hlstd{,} \hlkwc{res} \hlstd{=} \hlnum{300}\hlstd{)}
+\hlkwd{ggplot}\hlstd{(dat_plot,} \hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{= mod,} \hlkwc{y}\hlstd{= rmses))} \hlopt{+}
+  \hlkwd{geom_dotplot}\hlstd{(}\hlkwc{binaxis}\hlstd{=}\hlstr{'y'}\hlstd{,} \hlkwc{stackdir}\hlstd{=}\hlstr{'center'}\hlstd{)} \hlopt{+}
+  \hlkwd{geom_crossbar}\hlstd{(}\hlkwd{aes}\hlstd{(}\hlkwc{ymin}\hlstd{=rmses}\hlopt{-}\hlstd{sds,} \hlkwc{ymax}\hlstd{=rmses}\hlopt{+}\hlstd{sds,} \hlkwc{col} \hlstd{= mod,} \hlkwc{fill} \hlstd{= mod,} \hlkwc{alpha} \hlstd{=} \hlnum{0.01}\hlstd{),} \hlkwc{width}\hlstd{=}\hlnum{.2}\hlstd{,}
+                 \hlkwc{position}\hlstd{=}\hlkwd{position_dodge}\hlstd{(}\hlnum{.9}\hlstd{),} \hlkwc{alpha} \hlstd{=} \hlnum{0.5}\hlstd{)} \hlopt{+} \hlkwd{theme_bw}\hlstd{()} \hlopt{+}
+  \hlkwd{theme}\hlstd{(}\hlkwc{legend.position}\hlstd{=}\hlstr{"none"}\hlstd{)} \hlopt{+} \hlkwd{aes}\hlstd{(}\hlkwc{x} \hlstd{=} \hlkwd{fct_inorder}\hlstd{(mod))} \hlopt{+} \hlkwd{labs}\hlstd{(}\hlkwc{col} \hlstd{=} \hlstr{""}\hlstd{,} \hlkwc{x} \hlstd{=} \hlstr{""}\hlstd{,} \hlkwc{y} \hlstd{=} \hlstr{"RMSE"}\hlstd{)}
+\hlkwd{dev.off}\hlstd{()}
+\hlcom{#}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+
+\end{document}
